@@ -2,36 +2,42 @@
 
 class Router 
 {
-    protected $controller = "home";
-    protected $method = "index";
-    protected $params = [];
+    protected $controller = "home";  // Contrôleur par défaut
+    protected $method = "index";     // Méthode par défaut
+    protected $params = [];          // Paramètres supplémentaires
 
     public function __construct() {
+        // Récupérer l'URL et la nettoyer
         $url = $this->getURL();
-        // show($url);
 
-        if (file_exists("../app/controllers/" .strtolower($url[0]) . ".php")) {
-            $this->controller = strtolower($url[0]);
+        // Vérifier si le contrôleur existe
+        if (!empty($url[0]) && file_exists("../app/controllers/" . strtolower($url[0]) . ".php")) {
+            $this->controller = strtolower($url[0]); // Charger le bon contrôleur
             unset($url[0]);
-        }
-
+        } 
+        
         require "../app/controllers/" . $this->controller . ".php";
         $this->controller = new $this->controller;
 
-        if (isset($url[1])) {
-           $url[1] = strtolower($url[1]);
-           if (method_exists($this->controller,$url[1])) {
-                $this->method = $url[1];
-                unset($url[1]);
-           }
+        // Vérifier si la méthode existe dans le contrôleur
+        if (!empty($url[1]) && method_exists($this->controller, strtolower($url[1]))) {
+            $this->method = strtolower($url[1]); // Charger la méthode spécifiée
+            unset($url[1]);
         }
 
-        $this->params = (count($url) > 0) ? $url : ["home"];
-        call_user_func_array([$this->controller,$this->method],$this->params);
+        // Collecter les paramètres restants
+        $this->params = !empty($url) ? array_values($url) : []; // Convertir les valeurs en tableau indexé
+
+        // Appeler la méthode avec les paramètres
+        call_user_func_array([$this->controller, $this->method], $this->params);
     }
 
+    /**
+     * Extraire l'URL depuis $_GET['url']
+     */
     private function getURL() {
         $url = isset($_GET['url']) ? $_GET['url'] : "home";
-        return explode("/",filter_var(trim($url,"/"),FILTER_SANITIZE_URL));
+        return explode("/", filter_var(trim($url, "/"), FILTER_SANITIZE_URL));
     }
+
 }
